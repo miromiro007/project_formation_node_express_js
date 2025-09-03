@@ -1,0 +1,11 @@
+<h2>Validation du code</h2>
+<form action="/validate-code" method="POST">
+    <input type="hidden" name="email" value="<%= email %>">
+    <input type="text" name="code" placeholder="Code à 6 chiffres" maxlength="6" required pattern="[0-9]{6}">
+    <button>Valider</button>
+</form>
+<% if (error) { %><p style="color:red"><%= error %></p><% } %>
+<% if (message) { %><p style="color:green"><%= message %></p><% } %>
+
+
+
