@@ -20,9 +20,9 @@ async function sendRegistrationEmail(email, nom, validationCode) {
             <h2 style="color: #333;">Bonjour ${nom},</h2>
             <p>Votre compte a été créé avec succès. Veuillez vérifier votre adresse email en utilisant le code suivant :</p>
             <h3 style="color: #007bff;">${validationCode}</h3>
-            <p>Ce code est valide pendant 24 heures. Une fois votre email vérifié, un responsable RH examinera votre compte pour l'activer.</p>
+            <p>Ce code est valide pendant 24 heures. Une fois votre email vérifié, un responsable admin examinera votre compte pour l'activer.</p>
             <p>Cordialement,</p>
-            <p>L'équipe RH</p>
+            <p>L'équipe admin</p>
         </div>
         `,
     };
@@ -45,9 +45,9 @@ async function sendRegistrationEmail(email, nom, validationCode) {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <h2 style="color: #333;">Bonjour ${nom},</h2>
             <p>Votre adresse email a été vérifiée avec succès !</p>
-            <p>Votre compte est actuellement en attente d'approbation par un responsable RH. Vous recevrez une notification une fois votre compte activé.</p>
+            <p>Votre compte est actuellement en attente d'approbation par un responsable admin. Vous recevrez une notification une fois votre compte activé.</p>
             <p>Cordialement,</p>
-            <p>L'équipe RH</p>
+            <p>L'équipe admin</p>
         </div>
         `,
     };
@@ -188,6 +188,25 @@ async function sendPasswordMail(to, resetLink, code) {
     return sendMail(to, "Réinitialisation du mot de passe", html);
 }
 
+async function sendReservationStatusEmail(email, nom, formation, status) {
+    const statusMessage = status === 'confirmee'
+        ? `Votre réservation pour la formation "${formation}" a été confirmée.`
+        : `Votre réservation pour la formation "${formation}" a été annulée.`;
+
+    const html = `
+        <div>
+            <h2 style="color: #333;">Bonjour ${nom},</h2>
+            <p>${statusMessage}</p>
+            <p>Cordialement,</p>
+            <p>L'équipe admin</p>
+        </div>
+    `;
+
+    // Envoi de l'email
+    return sendMail(email, "Mise à jour de votre réservation", html);
+}
+
+
 
 module.exports = { transporter, 
     sendRegistrationEmail,
@@ -198,4 +217,5 @@ module.exports = { transporter,
     sendStatusActif,
     sendPasswordMail,
     sendMail,
-    sendPasswordMail };
+    sendPasswordMail,
+    sendReservationStatusEmail};

@@ -9,7 +9,8 @@ const formationSchema = new mongoose.Schema({
     competenceVisee: [{ type: String }],
     dateDebut: { type: Date, required: true },
     dateFin: { type: Date, required: true },
-    placeDispo: { type: Number, required: true, min: 0 }
+    placeDispo: { type: Number, required: true, min: 0 },
+    numeroSalle: { type: String, required: true } 
 }, { timestamps: true });
 
 const Formation = mongoose.model("Formation", formationSchema);
@@ -23,7 +24,8 @@ function valid_CreationFormation(obj) {
         competenceVisee: Joi.array().items(Joi.string()),
         dateDebut: Joi.date().required(),
         dateFin: Joi.date().greater(Joi.ref('dateDebut')).required(),
-        placeDispo: Joi.number().min(0).required()
+        placeDispo: Joi.number().min(0).required(),
+        numeroSalle: Joi.string().required() // 🔥 Validation ajoutée
     });
 
     return schema.validate(obj);
@@ -38,7 +40,8 @@ function valid_UpdateFormation(obj) {
         competenceVisee: Joi.array().items(Joi.string()),
         dateDebut: Joi.date(),
         dateFin: Joi.date().greater(Joi.ref('dateDebut')),
-        placeDispo: Joi.number().min(0)
+        placeDispo: Joi.number().min(0),
+        numeroSalle: Joi.string() // 🔥 Optionnel pour update
     });
 
     return schema.validate(obj);

@@ -132,14 +132,14 @@ const ValidateEmailUpdate = asyncHandler(async (req, res) => {
  * @file updateController.js
  * @description Valide la mise à jour de l'adresse email avec le code reçu
  * @route  /api/userUpdate/Change_status
- * @access only RH (RH)
+ * @access only (admin)
  */
 const Change_status = asyncHandler(async(req, res) => {
     console.log("Decoded user :", req.user);
     
-    // 1. Vérifier que seul un RH peut faire cette action
-    if (req.user.role !== "rh") {
-        return res.status(403).json({ message: "Non autorisé - Réservé aux RH" });
+    // 1. Vérifier que seul un admin peut faire cette action
+    if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Non autorisé - Réservé aux admins" });
     }
 
     const { error } = valid_activation_compte(req.body);

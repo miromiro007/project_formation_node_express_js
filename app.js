@@ -21,10 +21,12 @@ app.use(express.json())
 
 
 //import route 
-const  registerRoute = require("./routes/registerRoute");
+const registerRoute = require("./routes/registerRoute");
 const loginRoute = require("./routes/loginRoute")
 const updateRoute = require("./routes/updateRoute")
 const passwordRoute = require("./routes/passwordRoute");
+const formationRoute = require("./routes/formationRoute");
+const reservationRoute = require("./routes/reservationRoute");
 
 
 
@@ -33,6 +35,8 @@ app.use("/api/userRegister/",registerRoute);
 app.use("/api/userLogin", loginRoute);
 app.use("/api/userUpdate",updateRoute);
 app.use("/",passwordRoute);
+app.use("/api/formations",formationRoute);
+app.use("/api/reservations",reservationRoute);
 
 
 

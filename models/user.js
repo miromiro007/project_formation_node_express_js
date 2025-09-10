@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     nom: { type: String, required: true, minlength: 5 },
     email: { type: String, required: true, minlength: 5, unique: true, lowercase: true },
     password: { type: String, required: true, minlength: 8 },
-    role: { type: String, enum: ['employe', 'rh'], default: 'employe' },
+    role: { type: String, enum: ['employe', 'admin'], default: 'employe' },
     competence: [String],
     statut: { 
         type: String, 
@@ -25,7 +25,7 @@ function valid_Enregistrement(obj) {
         nom: Joi.string().min(5).required(),
         email: Joi.string().email().min(5).required(),
         password: Joi.string().min(8).required(),
-        role: Joi.string().valid('employe', 'rh').default('employe')
+        role: Joi.string().valid('employe', 'admin').default('employe')
     });
     return schema.validate(obj);
 }
@@ -45,7 +45,7 @@ function valid_mise_a_jour(obj) {
         nom: Joi.string().min(5),
         email: Joi.string().email().min(5),
         password: Joi.string().min(8),
-        role: Joi.string().valid('employe', 'rh'),
+        role: Joi.string().valid('employe', 'admin'),
         statut: Joi.string().valid('en_attente', 'actif', 'inactif')
     });
     return schema.validate(obj);

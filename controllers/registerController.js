@@ -43,7 +43,7 @@ const createUser = asyncHandler(async (req, res) => {
         email: req.body.email,
         password: hashedPassword,
         role: req.body.role || 'employe',
-        statut: req.body.role==='rh'?'actif':'en_attente',
+        statut: req.body.role==='admin'?'actif':'en_attente',
         validationCode, // Ajouter le code
         validationCodeExpires, // Ajouter la date d'expiration
         emailVerified: false
@@ -74,7 +74,7 @@ const createUser = asyncHandler(async (req, res) => {
 
 
     res.status(201).json({
-        message: "Compte créé avec succès. En attente d'activation par le RH.",
+        message: "Compte créé avec succès. En attente d'activation par le admin.",
         user: userResponse,
     });
 });
@@ -116,7 +116,7 @@ const validateUserCode = asyncHandler(async(req,res)=>{
     }
 
     // 5. Réponse
-    res.status(200).send({ message: "Email vérifié avec succès. Votre compte est en attente d'approbation par un responsable RH." });
+    res.status(200).send({ message: "Email vérifié avec succès. Votre compte est en attente d'approbation par un responsable admin." });
         
 })
 
