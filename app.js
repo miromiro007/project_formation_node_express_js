@@ -27,6 +27,7 @@ const updateRoute = require("./routes/updateRoute")
 const passwordRoute = require("./routes/passwordRoute");
 const formationRoute = require("./routes/formationRoute");
 const reservationRoute = require("./routes/reservationRoute");
+const userRoute = require('./routes/userRoute')
 
 
 
@@ -37,6 +38,7 @@ app.use("/api/userUpdate",updateRoute);
 app.use("/",passwordRoute);
 app.use("/api/formations",formationRoute);
 app.use("/api/reservations",reservationRoute);
+app.use("/api/user",userRoute)
 
 
 
