@@ -1,0 +1,38 @@
+version: '3.8'  # Version du format Docker Compose à utiliser
+
+services:  # Début de la définition des services/conteneurs
+
+  # Service pour l'application Node.js
+  app:
+    build: .  # Construire l'image à partir du Dockerfile dans le répertoire courant
+    ports:
+      - "5000:5000"  # Lier le port 5000 de l'hôte au port 5000 du conteneur
+    environment:  # Variables d'environnement pour le conteneur
+      - NODE_ENV=development  # Environnement Node.js
+      - mongoURL=mongodb://mongodb:27017/orange_formation  # URL de connexion MongoDB
+      - PORT=5000  # Port d'écoute de l'application
+      - JWT_SECRET_KEY=0000  # Clé secrète pour JWT
+      - EMAIL_USER=votre_email@gmail.com  # Email pour nodemailer
+      - EMAIL_PASS=dhtrmijuvhytaygy  # Mot de passe pour nodemailer
+    volumes:  # Système de montage de volumes
+      - .:/app  # Monter le répertoire courant dans /app du conteneur (développement)
+      - /app/node_modules  # Volume anonyme pour node_modules (évite l'écrasement)
+    depends_on:  # Dépendances entre services
+      - mongodb  # Démarrer MongoDB avant l'application
+    restart: unless-stopped   # Redémarrer automatiquement sauf si arrêté manuellement
+
+  # Service pour MongoDB
+  mongodb:
+    image: mongo:5  # Utiliser l'image officielle MongoDB version 5
+    ports:
+      - "27017:27017"  # Exposer le port MongoDB standard
+    environment:  # Variables d'environnement pour MongoDB
+      - MONGO_INITDB_DATABASE=orange_formation  # Créer la base de données au premier démarrage
+    volumes:
+      - mongo-data:/data/db  # Volume nommé pour persister les données MongoDB
+    restart: unless-stopped  # Redémarrer automatiquement sauf si arrêté manuellement
+
+# Volume pour persister les données MongoDB
+volumes:
+  mongo-data:  # Déclaration d'un volume nommé pour la persistence des données
+

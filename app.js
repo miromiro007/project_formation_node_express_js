@@ -42,8 +42,12 @@ app.use("/api/user",userRoute)
 
 
 
-const port  = process.env.port 
-app.listen(port, () => console.log(`Serveur lancé sur http://localhost:${port}`));
+const port  = process.env.PORT 
+//app.listen(port, () => console.log(`Serveur lancé sur http://localhost:${port}`));
+
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Serveur lancé sur http://localhost:${port}`);
+});
 
 
 
