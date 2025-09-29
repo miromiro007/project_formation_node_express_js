@@ -165,7 +165,7 @@ const Change_status = asyncHandler(async(req, res) => {
     }
 
     // 5. Mettre à jour le statut
-    user.statut = req.body.statut; // ⚠️ Correction: 'statut' pas 'role'
+    user.statut = req.body.statut; 
     await user.save();
 
     // 6. Envoyer l'email de notification

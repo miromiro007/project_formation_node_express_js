@@ -6,8 +6,23 @@ const path= require("path");
 const nodemailer = require("nodemailer");
 const connectTo = require("./db");
 const {User}= require('./models/user');
+const cors = require('cors');
+
+
+// Configurez CORS AVANT les routes !
+app.use(cors({
+  origin: 'http://localhost:4200', // autorisez votre front Angular
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-access-token'],
+  credentials: true,
+}));
+
+
 //connection to database 
 connectTo();
+
+
+
 
 
 // Configuration EJS
@@ -44,6 +59,10 @@ app.use("/api/user",userRoute)
 
 const port  = process.env.PORT 
 //app.listen(port, () => console.log(`Serveur lancé sur http://localhost:${port}`));
+
+
+
+
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Serveur lancé sur http://localhost:${port}`);

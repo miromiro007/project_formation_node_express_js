@@ -162,7 +162,7 @@ async function sendMail(to, subject, html) {
 }
 
 // ✅ Fonction spécialisée pour reset password
-async function sendPasswordMail(to, resetLink, code) {
+async function sendPasswordMail(to, code) {
     const html = `
         <!DOCTYPE html>
         <html lang="fr">
@@ -177,7 +177,6 @@ async function sendPasswordMail(to, resetLink, code) {
             <p>Voici votre code de validation :</p>
             <h3 style="color:blue;">${code}</h3>
             <p>Ou cliquez directement sur ce lien :</p>
-            <a href="${resetLink}">${resetLink}</a>
             <p><b>⚠️ Ce code/lien est valable 15 minutes.</b></p>
             <p>Si vous n'avez pas fait cette demande, ignorez ce message.</p>
             <br>

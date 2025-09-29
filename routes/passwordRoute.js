@@ -1,24 +1,29 @@
 const express = require("express");
 const router = express.Router();
+
 const {
-    getForgotPassword,
-    postForgotPassword,
-    getValidateCode,
-    postValidateCode,
-    getResetPassword,
-    postResetPassword
+  getForgotPassword,
+  postForgotPassword,
+  postValidateCode,
+  getResetPassword,
+  postResetPassword,
 } = require("../controllers/passwordController");
 
-// 🔹 Page "Mot de passe oublié"
+// Route GET facultative, utile uniquement si utilisée côté front classique
+// Peut être supprimée si uniquement SPA Angular est utilisé
 router.get("/forgot-password", getForgotPassword);
+
+// POST demander un code
 router.post("/forgot-password", postForgotPassword);
 
-// 🔹 Page "Validation du code"
-router.get("/validate-code", getValidateCode);
-router.post("/validate-code", postValidateCode); // AJOUTER CETTE LIGNE
+// POST validation du code
+router.post("/validate-code", postValidateCode);
 
-// 🔹 Page "Réinitialiser le mot de passe"
+// GET reset password (optionnel pour contrôles côté front)
+// Peut retourner JSON ou être supprimé si front gère toute la navigation
 router.get("/reset-password", getResetPassword);
+
+// POST réinitialisation mot de passe
 router.post("/reset-password", postResetPassword);
 
 module.exports = router;

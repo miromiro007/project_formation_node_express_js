@@ -3,71 +3,41 @@ const { User, valid_forgot_password } = require("../models/user");
 const { sendPasswordMail } = require("../utils/mailer");
 const asyncHandler = require("express-async-handler");
 
-// Page "Mot de passe oublié"
+// Page "Mot de passe oublié" - si utilisée, sinon peut être supprimée en SPA Angular
 const getForgotPassword = asyncHandler(async (req, res) => {
-    res.render("forgot-password", { error: null, message: null });
+    res.json({ message: "Endpoint mot de passe oublié - GET endpoint non utilisé en SPA" });
 });
 
 // Traitement "Mot de passe oublié" → envoi code
 const postForgotPassword = asyncHandler(async (req, res) => {
     const { error } = valid_forgot_password(req.body);
-    if (error) return res.render("forgot-password", { 
-        error: error.details[0].message, 
-        message: null 
-    });
+    if (error) return res.status(400).json({ message: error.details[0].message });
 
     const { email } = req.body;
     const user = await User.findOne({ email });
-    
-    // Toujours afficher le même message pour des raisons de sécurité
-    if (!user) return res.render("forgot-password", {
-        message: "Si l'email existe, un code de validation a été envoyé",
-        error: null
-    });
+
+    // Toujours retourner un message générique pour la sécurité
+    if (!user) return res.json({ message: "Si l'email existe, un code de validation a été envoyé" });
 
     // Générer code 6 chiffres
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     user.validationCode = code;
-    user.validationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 min
+    user.validationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save();
 
     try {
-        // Construire le lien de réinitialisation
-        const resetLink = `${req.protocol}://${req.get('host')}/reset-password?email=${encodeURIComponent(email)}&code=${code}`;
-        
-        await sendPasswordMail(email, resetLink, code);
-        res.render("validate-code", { 
-            email, 
-            error: null,
-            message: "Un code de validation a été envoyé à votre email" 
-        });
+        await sendPasswordMail(email, code);
+        return res.json({ message: "Un code de validation a été envoyé à votre email" });
     } catch (err) {
         console.error(err);
-        res.render("forgot-password", { 
-            error: "Erreur lors de l'envoi du mail", 
-            message: null 
-        });
+        return res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
     }
 });
-
-// Page "Validation du code"
-const getValidateCode = (req, res) => {
-    const { email } = req.query;
-    res.render("validate-code", { 
-        email, 
-        error: null,
-        message: null 
-    });
-};
 
 // Traitement "Validation du code"
 const postValidateCode = asyncHandler(async (req, res) => {
     const { email, code } = req.body;
-    if (!email || !code) return res.render("validate-code", { 
-        email, 
-        error: "Tous les champs sont requis",
-        message: null 
-    });
+    if (!email || !code) return res.status(400).json({ message: "Tous les champs sont requis" });
 
     const user = await User.findOne({
         email,
@@ -75,30 +45,20 @@ const postValidateCode = asyncHandler(async (req, res) => {
         validationCodeExpires: { $gt: Date.now() },
     });
 
-    if (!user) return res.render("validate-code", { 
-        email, 
-        error: "Code invalide ou expiré",
-        message: null 
-    });
+    if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
 
-    // Rediriger vers la page de réinitialisation avec email et code
-    res.redirect(`/reset-password?email=${encodeURIComponent(email)}&code=${code}`);
+    return res.json({ message: "Code validé avec succès" });
 });
 
-// Page "Réinitialiser mot de passe"
+// Page "Réinitialiser mot de passe" - pas nécessaire si front Angular, mais à garder si tu veux 
+// (sinon peut renvoyer un json ou un message pour que front gère)
 const getResetPassword = asyncHandler(async (req, res) => {
     const { email, code } = req.query;
-    
+
     if (!email || !code) {
-        return res.render("reset-password", { 
-            email: "", 
-            code: "", 
-            error: "Email et code requis",
-            message: null 
-        });
+        return res.status(400).json({ message: "Email et code requis" });
     }
 
-    // Vérifier que le code est toujours valide
     const user = await User.findOne({
         email,
         validationCode: code,
@@ -106,20 +66,10 @@ const getResetPassword = asyncHandler(async (req, res) => {
     });
 
     if (!user) {
-        return res.render("reset-password", { 
-            email, 
-            code, 
-            error: "Code invalide ou expiré",
-            message: null 
-        });
+        return res.status(400).json({ message: "Code invalide ou expiré" });
     }
 
-    res.render("reset-password", { 
-        email, 
-        code, 
-        error: null,
-        message: null 
-    });
+    return res.json({ message: "Code valide" });
 });
 
 // Traitement "Nouveau mot de passe"
@@ -127,28 +77,13 @@ const postResetPassword = asyncHandler(async (req, res) => {
     const { email, code, password, confirmPassword } = req.body;
 
     if (!email || !code || !password || !confirmPassword) {
-        return res.render("reset-password", { 
-            email, 
-            code, 
-            error: "Tous les champs sont requis",
-            message: null 
-        });
+        return res.status(400).json({ message: "Tous les champs sont requis" });
     }
     if (password !== confirmPassword) {
-        return res.render("reset-password", { 
-            email, 
-            code, 
-            error: "Les mots de passe ne correspondent pas",
-            message: null 
-        });
+        return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
     }
     if (password.length < 8) {
-        return res.render("reset-password", { 
-            email, 
-            code, 
-            error: "Le mot de passe doit contenir au moins 8 caractères",
-            message: null 
-        });
+        return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères" });
     }
 
     const user = await User.findOne({
@@ -157,12 +92,7 @@ const postResetPassword = asyncHandler(async (req, res) => {
         validationCodeExpires: { $gt: Date.now() },
     });
 
-    if (!user) return res.render("reset-password", { 
-        email, 
-        code, 
-        error: "Code invalide ou expiré",
-        message: null 
-    });
+    if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
 
     // Hasher le nouveau mot de passe
     const salt = await bcrypt.genSalt(10);
@@ -171,32 +101,12 @@ const postResetPassword = asyncHandler(async (req, res) => {
     user.validationCodeExpires = undefined;
     await user.save();
 
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Mot de passe réinitialisé</title>
-            <style>
-                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                .success { color: green; font-size: 18px; }
-                a { color: #007bff; text-decoration: none; }
-            </style>
-        </head>
-        <body>
-            <div class="success">
-                <h2>Mot de passe réinitialisé avec succès !</h2>
-                <p>Vous pouvez maintenant vous connecter.</p>
-                <p><a href="/login">Se connecter</a></p>
-            </div>
-        </body>
-        </html>
-    `);
+    return res.json({ message: "Mot de passe réinitialisé avec succès" });
 });
 
 module.exports = {
     getForgotPassword,
     postForgotPassword,
-    getValidateCode,
     postValidateCode,
     getResetPassword,
     postResetPassword,

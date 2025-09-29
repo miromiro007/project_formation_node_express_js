@@ -41,7 +41,30 @@ const getUsersProfile = asyncHandler(async (req, res) => {
     res.status(200).json(users);
 });;
 
+/**
+ * @file userController.js
+ * @desc Supprimer un utilisateur par l'admin
+ * @route DELETE /api/user/delete/:id
+ * @access Admin
+ */
+const deleteProfile = asyncHandler(async (req, res) => {
+  // Vérifie l'authentification et que l'utilisateur est admin
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ message: "Accès refusé, administrateur uniquement" });
+  }
 
+  const user = await User.findByIdAndDelete(req.params.id);
+
+  if (!user) {
+    return res.status(404).json({ message: "Utilisateur introuvable" });
+  }
+
+  return res.status(200).json({ message: `L'utilisateur ${req.params.id} a été supprimé avec succès` });
+});
+
+
+// ✅ Correct
 module.exports = {
-    getUsersProfile
-};
+    getUsersProfile,
+    deleteProfile
+};  

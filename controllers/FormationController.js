@@ -1,7 +1,12 @@
 const {Formation,valid_CreationFormation,valid_DeleteFormation,valid_UpdateFormation} = require("../models/formation");
 const asyncHandler = require ("express-async-handler");
 const {} = require("../utils/mailer");
+const cors = require('cors');
 require("dotenv").config();
+
+
+// Autoriser toutes les origines (développement uniquement)
+
 
 
 
@@ -15,40 +20,53 @@ require("dotenv").config();
  * @returns {Array<Object>} 
  */
 
-// 👉 GET Formations (avec filtres ou toutes si aucun filtre)
 const getFormations = asyncHandler(async (req, res) => {
-  const { titre, domaine, dateDebut, dateFin, minPlace, maxPlace } = req.query || {};
+  const { titre, domaine, dateDebut, dateFin, placeDispo } = req.query || {};
 
   let filtre = {};
 
-  // 🔍 Recherche partielle dans le titre
+  // Filtre partiel sur le titre (insensible à la casse)
   if (titre) {
     filtre.titre = { $regex: titre, $options: "i" };
   }
 
-  // 🔍 Recherche partielle dans le domaine
+  // Filtre partiel sur le domaine (insensible à la casse)
   if (domaine) {
     filtre.domaine = { $regex: domaine, $options: "i" };
   }
 
-  // 📅 Filtrage par intervalle de dates
+  // Filtrage sur la dateDebut comprise entre dateDebut et dateFin
   if (dateDebut || dateFin) {
     filtre.dateDebut = {};
     if (dateDebut) filtre.dateDebut.$gte = new Date(dateDebut);
     if (dateFin) filtre.dateDebut.$lte = new Date(dateFin);
   }
 
-  // 🎟️ Filtrage par nombre de places disponibles
-  if (minPlace || maxPlace) {
-    filtre.placeDispo = {};
-    if (minPlace) filtre.placeDispo.$gte = parseInt(minPlace);
-    if (maxPlace) filtre.placeDispo.$lte = parseInt(maxPlace);
+  // Filtrage exact sur le nombre de places disponibles
+  if (placeDispo) {
+    filtre.placeDispo = { $gte: parseInt(placeDispo , 10) };
   }
 
-  // ⚡ Si aucun filtre, retourne toutes les formations
   const formations = await Formation.find(filtre);
   res.status(200).json(formations);
 });
+
+/**
+ * @desc  Récupérer une formation par son ID
+ * @route GET /api/formations/:id
+ * @access Public
+ */
+const getFormation = asyncHandler(async (req, res) => {
+  const formation = await Formation.findById(req.params.id);
+
+  if (!formation) {
+    return res.status(404).json({ message: "Formation non trouvée" });
+  }
+
+  res.status(200).json(formation);
+});
+
+
 
 
 /**
@@ -137,5 +155,5 @@ const updateFormation = asyncHandler(async (req, res) => {
 });
 
 
-module.exports = {getFormations,addFormation,deleteFormation,updateFormation}
+module.exports = {getFormations,addFormation,deleteFormation,updateFormation,getFormation}
 

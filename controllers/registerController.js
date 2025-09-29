@@ -79,47 +79,50 @@ const createUser = asyncHandler(async (req, res) => {
     });
 });
 
-//post validation du code de comfirmation 
+// ✅ POST : validation du code de confirmation email
+const validateUserCode = asyncHandler(async (req, res) => {
+  // Vérification de la structure des données reçues
+  const { error } = valid_code_validation(req.body);
+  if (error) {
+    return res.status(400).json({ message: error.details[0].message });
+  }
 
-const validateUserCode = asyncHandler(async(req,res)=>{
-    const {error} = valid_code_validation(req.body);
-    if(error) return res.status(400).send({message : error.details[0].message })
+  const { email, code } = req.body;
 
-    const { email, code } = req.body;
-    
-    // 2. Trouver l'utilisateur
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).send({ message: "Utilisateur non trouvé." });
+  // Recherche de l'utilisateur par email
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: "Utilisateur non trouvé." });
+  }
 
-    // 3. Vérifier le code et l'expiration
-    if (user.validationCode !== code) {
-        return res.status(400).send({ message: "Code de validation incorrect." });
-    }
-    if (user.validationCodeExpires < Date.now()) {
-        return res.status(400).send({ message: "Code de validation expiré." });
-    }
+  // Vérification du code de validation
+  if (String(user.validationCode) !== String(code)) {
+    return res.status(401).json({ message: "Code de validation incorrect." });
+  }
 
-    // 4. Mettre à jour emailVerified, laisser statut en_attente
-    user.emailVerified=true;
-    user.validationCode=undefined;
-    user.validationCodeExpires = undefined;
-    await user.save();
+  // Vérification de l'expiration du code
+  if (!user.validationCodeExpires || new Date(user.validationCodeExpires).getTime() < Date.now()) {
+    return res.status(400).json({ message: "Code de validation expiré." });
+  }
 
-    //envoyer le mail de validation reussite 
-    try{
-        await sendValidationSuccessEmail(user.email, user.nom);
-    }catch(error){
+  // Mise à jour de l'utilisateur : email validé
+  user.emailVerified = true;
+  user.validationCode = null;
+  user.validationCodeExpires = null;
 
-        console.error("Erreur d'envoi d'email de validation réussie:", err);
-        return res.status(500).send({ message: "Email vérifié, mais erreur lors de l'envoi de l'email de confirmation." });
+  await user.save();
 
-    }
+  // Envoi d'un mail de confirmation de succès
+  
+  await sendValidationSuccessEmail(user.email, user.nom);
+  
+  console.log("hahahahha")
 
-    // 5. Réponse
-    res.status(200).send({ message: "Email vérifié avec succès. Votre compte est en attente d'approbation par un responsable admin." });
-        
-})
-
+  // ✅ Réponse succès
+  res.status(200).json({
+    message: "Email vérifié avec succès. Votre compte est désormais en attente d'approbation par un administrateur."
+  });
+});
 
 
 
