@@ -1,6 +1,6 @@
-const {User} = require('../models/user');
-const asyncHandler = require('express-async-handler')
-
+const {User } = require('../models/user');
+const asyncHandler = require('express-async-handler');
+const {Reservation} = require("../models/reservation")
 /**
  * @file userController.js
  * @description Récupère les profils utilisateurs avec possibilité de filtres dynamiques
@@ -48,18 +48,36 @@ const getUsersProfile = asyncHandler(async (req, res) => {
  * @access Admin
  */
 const deleteProfile = asyncHandler(async (req, res) => {
-  // Vérifie l'authentification et que l'utilisateur est admin
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ message: "Accès refusé, administrateur uniquement" });
   }
 
-  const user = await User.findByIdAndDelete(req.params.id);
+  const userId = req.params.id;
 
+  // Trouver l'utilisateur à supprimer
+  const user = await User.findById(userId);
   if (!user) {
     return res.status(404).json({ message: "Utilisateur introuvable" });
   }
 
-  return res.status(200).json({ message: `L'utilisateur ${req.params.id} a été supprimé avec succès` });
+  // Trouver toutes les réservations de cet utilisateur
+  const reservations = await Reservation.find({ employe: userId }).populate('formation');
+
+  // Pour chaque réservation confirmée, remettre une place disponible dans la formation
+  for (const reservation of reservations) {
+    if (reservation.status === "confirmee" && reservation.formation) {
+      reservation.formation.placeDispo += 1;
+      await reservation.formation.save();
+    }
+  }
+
+  // Supprimer toutes les réservations de l'utilisateur
+  await Reservation.deleteMany({ employe: userId });
+
+  // Supprimer l'utilisateur
+  await User.findByIdAndDelete(userId);
+
+  return res.status(200).json({ message: `L'utilisateur ${userId} et ses réservations associées ont été supprimés avec succès` });
 });
 
 

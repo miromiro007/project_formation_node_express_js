@@ -126,7 +126,7 @@ const updateReservationStatus = asyncHandler(async (req, res) => {
  */
 const getReservations = asyncHandler(async (req, res) => {
     // Vérifier si l'utilisateur est admin
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" ) {
         return res.status(401).json({ message: "Non autorisé" });
     }
 
@@ -154,43 +154,62 @@ const getReservations = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const deleteReservation = asyncHandler(async (req, res) => {
-    const reservationId = req.params.id;
-    const { email } = req.body || {}; // Si req.body est undefined, on utilise un objet vide
+  const reservationId = req.params.id;
 
-    // Vérifier si la réservation existe et peupler les données de l'employé
-    const reservation = await Reservation.findById(reservationId).populate('employe');
-    if (!reservation) {
-        return res.status(404).json({ message: "Réservation non trouvée" });
+  const reservation = await Reservation.findById(reservationId).populate('employe');
+  if (!reservation) {
+    return res.status(404).json({ message: "Réservation non trouvée" });
+  }
+
+  // Si réservation confirmée, remettre une place dispo en vérifiant la capacité
+  if (reservation.status === "confirmee") {
+    const formation = await Formation.findById(reservation.formation);
+    if (formation) {
+        formation.placeDispo += 1;
+        await formation.save();
     }
+  }
 
-    // Si un email est fourni, on valide, sinon on passe sans validation
-    if (email) {
-        if (reservation.employe.email !== email) {
-            return res.status(403).json({ message: "Email ne correspond pas à la réservation" });
-        }
-    }
+  await Reservation.findByIdAndDelete(reservationId);
 
-    // Si la réservation était confirmée, remettre la place disponible
-    if (reservation.status === "confirmee") {
-        const formation = await Formation.findById(reservation.formation);
-        if (formation) {
-            formation.placeDispo += 1;
-            await formation.save();
-        }
-    }
-
-    // Supprimer la réservation
-    await Reservation.findByIdAndDelete(reservationId);
-
-    res.status(200).json({ 
-        message: "Réservation supprimée avec succès"
-    });
+  res.status(200).json({
+    message: "Réservation supprimée avec succès"
+  });
 });
+
+/**
+ * @desc    Récupérer toutes les réservations d un seul employe 
+ * @route   GET /api/reservations/employe
+ * @access  employe
+ */
+const getEmployeReservations = asyncHandler(async (req, res) => {
+    if (!req.user) {
+      console.error('Erreur : req.user est undefined. Middleware auth non appliquée ?');
+      return res.status(401).json({ message: 'Non autorisé' });
+    }
+
+    if (req.user.role !== 'employe') {
+      return res.status(401).json({ message: 'Non autorisé' });
+    }
+
+    const employeId = req.user.id;
+    const reservations = await Reservation.find({ employe: employeId })
+      .populate('formation', 'titre placeDispo dateDebut dateFin')
+      .populate('employe', 'nom email');
+
+    if (!reservations || reservations.length === 0) {
+      return res.status(404).json({ message: 'Aucune réservation trouvée' });
+    }
+
+    res.json(reservations);
+});
+
 
 module.exports = {
     addReservation,
     updateReservationStatus,
     getReservations,
-    deleteReservation
+    deleteReservation,
+    getEmployeReservations
 };
 

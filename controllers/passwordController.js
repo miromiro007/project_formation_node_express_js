@@ -10,44 +10,42 @@ const getForgotPassword = asyncHandler(async (req, res) => {
 
 // Traitement "Mot de passe oublié" → envoi code
 const postForgotPassword = asyncHandler(async (req, res) => {
-    const { error } = valid_forgot_password(req.body);
-    if (error) return res.status(400).json({ message: error.details[0].message });
+  const { error } = valid_forgot_password(req.body);
+  if (error) return res.status(400).json({ message: error.details[0].message });
 
-    const { email } = req.body;
-    const user = await User.findOne({ email });
+  const { email } = req.body;
+  const user = await User.findOne({ email });
 
-    // Toujours retourner un message générique pour la sécurité
-    if (!user) return res.json({ message: "Si l'email existe, un code de validation a été envoyé" });
+  if (!user) return res.json({ message: "Si l'email existe, un code de validation a été envoyé" });
 
-    // Générer code 6 chiffres
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    user.validationCode = code;
-    user.validationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
-    await user.save();
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  user.validationCode = code;
+  user.validationCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+  await user.save();
 
-    try {
-        await sendPasswordMail(email, code);
-        return res.json({ message: "Un code de validation a été envoyé à votre email" });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
-    }
+  try {
+    await sendPasswordMail(email, code);
+    return res.json({ message: "Un code de validation a été envoyé à votre email" });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Erreur lors de l'envoi du mail" });
+  }
 });
 
-// Traitement "Validation du code"
+// POST - Validation du code
 const postValidateCode = asyncHandler(async (req, res) => {
-    const { email, code } = req.body;
-    if (!email || !code) return res.status(400).json({ message: "Tous les champs sont requis" });
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ message: "Tous les champs sont requis" });
 
-    const user = await User.findOne({
-        email,
-        validationCode: code,
-        validationCodeExpires: { $gt: Date.now() },
-    });
+  const user = await User.findOne({
+    email,
+    validationCode: code,
+    validationCodeExpires: { $gt: Date.now() },
+  });
 
-    if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
+  if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
 
-    return res.json({ message: "Code validé avec succès" });
+  return res.json({ message: "Code validé avec succès" });
 });
 
 // Page "Réinitialiser mot de passe" - pas nécessaire si front Angular, mais à garder si tu veux 
@@ -72,36 +70,37 @@ const getResetPassword = asyncHandler(async (req, res) => {
     return res.json({ message: "Code valide" });
 });
 
-// Traitement "Nouveau mot de passe"
+// POST - Réinitialisation du mot de passe
 const postResetPassword = asyncHandler(async (req, res) => {
-    const { email, code, password, confirmPassword } = req.body;
+  const { email, code, password, confirmPassword } = req.body;
 
-    if (!email || !code || !password || !confirmPassword) {
-        return res.status(400).json({ message: "Tous les champs sont requis" });
-    }
-    if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
-    }
-    if (password.length < 8) {
-        return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères" });
-    }
+  if (!email || !code || !password || !confirmPassword) {
+    return res.status(400).json({ message: "Tous les champs sont requis" });
+  }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: "Les mots de passe ne correspondent pas" });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Le mot de passe doit contenir au moins 8 caractères" });
+  }
 
-    const user = await User.findOne({
-        email,
-        validationCode: code,
-        validationCodeExpires: { $gt: Date.now() },
-    });
+  const user = await User.findOne({
+    email,
+    validationCode: code,
+    validationCodeExpires: { $gt: Date.now() },
+  });
 
-    if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
+  if (!user) return res.status(400).json({ message: "Code invalide ou expiré" });
 
-    // Hasher le nouveau mot de passe
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-    user.validationCode = undefined;
-    user.validationCodeExpires = undefined;
-    await user.save();
+  const salt = await bcrypt.genSalt(10);
+  user.password = await bcrypt.hash(password, salt);
 
-    return res.json({ message: "Mot de passe réinitialisé avec succès" });
+  user.emailVerified = true;
+  user.validationCode = null;
+  user.validationCodeExpires = null;
+  await user.save();
+
+  return res.json({ message: "Mot de passe réinitialisé avec succès" });
 });
 
 module.exports = {

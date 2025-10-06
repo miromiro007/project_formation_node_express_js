@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addReservation, updateReservationStatus ,getReservations,deleteReservation} = require('../controllers/reservationController');
+const { addReservation, updateReservationStatus ,getReservations,deleteReservation, getEmployeReservations} = require('../controllers/reservationController');
 const { verifyToken } = require('../middleware/verifyToken');
 
 // Route pour ajouter une nouvelle réservation (employé)
@@ -11,7 +11,9 @@ router.put('/:id', verifyToken, updateReservationStatus);
 
 router.get("/",verifyToken,getReservations);
 
-router.delete('/:id',deleteReservation);
+router.delete('/public/:id',deleteReservation);
+
+router.get('/employe',verifyToken,getEmployeReservations)
 
 
 module.exports = router;

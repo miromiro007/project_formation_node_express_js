@@ -114,9 +114,10 @@ const ValidateEmailUpdate = asyncHandler(async (req, res) => {
 
     // ✅ Mettre à jour l'email avec celui fourni dans la requête
     user.email = req.body.email;
-    user.validationCode = undefined;
-    user.validationCodeExpires = undefined;
-    user.emailVerified = true;
+     // Mise à jour de l'utilisateur : email validé
+  user.emailVerified = true;
+  user.validationCode = null;
+  user.validationCodeExpires = null;
     
     await user.save();
 
