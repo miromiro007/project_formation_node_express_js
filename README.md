@@ -4,462 +4,186 @@
 
 ### Connexion
 - **POST** `/api/userLogin/login`
-- **Body** :
-  ```json
-  {
-    "email": "user@email.com",
-    "password": "motdepasse"
-  }
-  ```
-- **Réponse** :
-  ```json
-  {
-    "message": "Connexion réussie",
-    "token": "JWT_TOKEN",
-    "user": {
-      "id": "...",
-      "nom": "...",
-      "email": "...",
-      "role": "employe|admin",
-      "statut": "en_attente|actif|inactif",
-      "enLigne": true
-    }
-  }
-  ```
-
-### Déconnexion
-- **POST** `/api/userLogin/logout`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Réponse** :
-  ```json
-  {
-    "message": "Déconnexion réussie",
-    "user": { ... }
-  }
-  ```
-
----
-
-## Inscription
-
-### Enregistrement
-- **POST** `/api/userRegister/register`
-- **Body** :
-  ```json
-  {
-    "nom": "Nom complet",
-    "email": "user@email.com",
-    "password": "motdepasse",
-    "role": "employe" // ou "admin"
-  }
-  ```
-- **Réponse** :
-  ```json
-  {
-    "message": "Compte créé avec succès. En attente d'activation par le admin.",
-    "user": { ... }
-  }
-  ```
-
-### Validation du code d'inscription
-- **POST** `/api/userRegister/validate-code`
-- **Body** :
-  ```json
-  {
-    "email": "user@email.com",
-    "code": "123456"
-  }
-  ```
-- **Réponse** :
-  ```json
-  {
-    "message": "Email vérifié avec succès. Votre compte est en attente d'approbation par un responsable admin."
-  }
-  ```
-
----
-
-## Mot de passe oublié
-
-### Demander un code
-- **POST** `/forgot-password`
-- **Body** :
-  ```json
-  {
-    "email": "user@email.com"
-  }
-  ```
-- **Réponse** : Affiche un message dans la vue
-
-### Valider le code
-- **POST** `/validate-code`
-- **Body** :
-  ```json
-  {
-    "email": "user@email.com",
-    "code": "123456"
-  }
-  ```
-- **Réponse** : Redirige vers la page de réinitialisation
-
-### Réinitialiser le mot de passe
-- **POST** `/reset-password`
-- **Body** :
-  ```json
-  {
-    "email": "user@email.com",
-    "code": "123456",
-    "password": "nouveaumotdepasse",
-    "confirmPassword": "nouveaumotdepasse"
-  }
-  ```
-- **Réponse** : Affiche succès ou erreur
+ # project_formation
 
----
+ README en français — API de gestion des formations, utilisateurs et réservations.
 
+ ## Description
 
----
+ Ce projet fournit une API REST pour gérer des formations (création, modification, suppression), des utilisateurs (inscription, authentification, gestion de profil) et des réservations de formation. L'application inclut un système de validation par code (email), réinitialisation de mot de passe, envoi d'emails via `nodemailer`, et des vues EJS pour certaines pages (mot de passe oublié / réinitialisation).
 
-## Formations
+ Le projet se trouve à la racine avec les fichiers principaux suivants :
 
-### Liste des formations
-- **GET** `/api/formations`
-- **Query** : `titre`, `domaine`, `dateDebut`, `dateFin`, `minPlace`, `maxPlace`
-- **Réponse** : Liste des formations
+ - `app.js` : point d'entrée de l'application.
+ - `db.js` : connexion à la base de données MongoDB.
+ - `seeder.js` : script d'initialisation / remplissage de la base de données.
+ - Dossiers importants : `controllers/`, `models/`, `routes/`, `middleware/`, `views/`, `utils/`.
 
-### Récupérer une formation par ID
-- **GET** `/api/formations/:id`
-- **Réponse** : Objet formation correspondant à l’ID
+ ## Fonctionnalités principales
 
-### Ajouter une formation (admin)
-- **POST** `/api/formations/addFormation`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Body** : Voir modèle formation
+ - Authentification : inscription avec validation par code, connexion, déconnexion.
+ - Gestion des utilisateurs : listing (filtrage), modification de profil, changement de statut (admin), suppression.
+ - Gestion des formations : CRUD complet pour les formations (admin pour créer/modifier/supprimer).
+ - Réservations : employés peuvent demander des réservations ; les admins confirment/annulent et reçoivent des notifications par mail. Gestion des places disponibles (décrémentation/incrémentation) selon le statut.
+ - Réinitialisation de mot de passe : demande de code par email, validation du code, changement du mot de passe.
+ - Middleware de sécurité : vérification du token JWT (`verifyToken.js`) et contrôle des rôles.
 
-### Modifier une formation (admin)
-- **PUT** `/api/formations/updateFormation/:id`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Body** : Champs à modifier
-
-### Supprimer une formation (admin)
-- **DELETE** `/api/formations/deleteFormation/:id`
-- **Headers** : `x-access-token: JWT_TOKEN`
-
----
+ ## Installation
 
-Reservation API Documentation
-This API provides endpoints for managing reservations for training sessions (formations). It includes functionality for employees to create reservations, admins to update reservation statuses, retrieve reservations, and delete reservations with optional email validation.
-Table of Contents
+ Pré-requis :
 
-Base URL
-Authentication
-Endpoints
-Add a Reservation (Employee)
-Update Reservation Status (Admin)
-Get Reservations (Admin)
-Delete a Reservation (Public)
+ - Node.js (>= 18 recommandé)
+ - MongoDB (local ou Atlas)
 
+ Étapes :
 
-Error Responses
+ 1. Cloner le dépôt et se placer dans le dossier du projet.
 
-Base URL
-All endpoints are prefixed with /api/reservations.
-Authentication
-Most endpoints require a JSON Web Token (JWT) for authentication. Include the token in the request headers as follows:
-x-access-token: YOUR_JWT_TOKEN
+ 2. Installer les dépendances :
 
+ ```bash
+ npm install
+ ```
 
-Employee Role: Required for creating reservations.
-Admin Role: Required for updating reservation status and retrieving reservations.
-Public Access: The delete endpoint does not require authentication but may require email validation.
+ 3. Créer un fichier `.env` à la racine avec les variables d'environnement suivantes (exemple) :
 
-Endpoints
-Add a Reservation (Employee)
-Create a new reservation for a training session.
+ ```
+ PORT=5000
+ MONGO_URI=mongodb://localhost:27017/nom_de_la_db
+ JWT_SECRET=votre_cle_jwt
+ EMAIL_USER=adresse@mail.com
+ EMAIL_PASS=motdepasse_mail
+ FRONT_URL=http://localhost:3000
+ ```
 
-Method: POST
-Path: /api/reservations
-Headers:x-access-token: JWT_TOKEN
-
-
-Body:{
-  "formation": "ID_FORMATION"
-}
+ 4. (Optionnel) Lancer le seeder pour pré-remplir la BD :
 
+ ```bash
+ node seeder.js
+ ```
 
-Description: Allows an employee to request a reservation for a specific training session. The formation ID must correspond to an existing training session, and there must be available slots (placeDispo > 0). The employee cannot reserve the same formation more than once.
-Success Response:
-Status: 201
-Body:{
-  "message": "Demande de réservation envoyée avec succès",
-  "reservation": {
-    "_id": "RESERVATION_ID",
-    "formation": "ID_FORMATION",
-    "employe": "EMPLOYEE_ID",
-    "status": "en_attente",
-    "dateReservation": "2025-09-29T14:18:00.000Z",
-    "createdAt": "2025-09-29T14:18:00.000Z",
-    "updatedAt": "2025-09-29T14:18:00.000Z"
-  }
-}
+ ## Démarrage
 
+ - En production :
 
+ ```bash
+ npm start
+ ```
 
+ - En développement (avec `nodemon` installé globalement ou en dépendance) :
 
+ ```bash
+ npx nodemon app.js
+ ```
 
-Update Reservation Status (Admin)
-Update the status of an existing reservation.
+ Ou avec Docker Compose si vous avez fourni un `docker-compose.yml` :
 
-Method: PUT
-Path: /api/reservations/:id
-Headers:x-access-token: JWT_TOKEN
+ ```bash
+ docker-compose up --build
+ ```
 
+ ## Scripts utiles
 
-Body:{
-  "status": "confirmee|annulee|en_attente"
-}
+ - `npm start` : lance `node app.js`.
 
+ Pour les autres scripts, consulter `package.json`.
 
-Description: Allows an admin to update the status of a reservation. If the status is set to confirmee, the available slots (placeDispo) for the formation are decremented. An email is sent to the employee to notify them of the status change.
-Success Response:
-Status: 200
-Body:{
-  "message": "Statut de la réservation mis à jour avec succès",
-  "reservation": {
-    "_id": "RESERVATION_ID",
-    "formation": {
-      "_id": "ID_FORMATION",
-      "titre": "Formation Title",
-      "placeDispo": 9
-    },
-    "employe": {
-      "_id": "EMPLOYEE_ID",
-      "nom": "Employee Name",
-      "email": "employee@example.com"
-    },
-    "status": "confirmee",
-    "dateReservation": "2025-09-29T14:18:00.000Z",
-    "createdAt": "2025-09-29T14:18:00.000Z",
-    "updatedAt": "2025-09-29T14:20:00.000Z"
-  }
-}
+ ## Variables d'environnement importantes
 
+ - `MONGO_URI` : string de connexion à MongoDB.
+ - `JWT_SECRET` : clé secrète pour signer les tokens JWT.
+ - `EMAIL_USER` / `EMAIL_PASS` : pour envoyer les emails (nodemailer).
+ - `FRONT_URL` : URL du front (utilisé pour les liens dans les emails).
 
+ ## Routes principales (aperçu)
 
+ Les routes sont regroupées dans le dossier `routes/`. Voici un aperçu des endpoints les plus utilisés. Préfixe global : `/api` pour la plupart des routes.
 
+ - Auth / Utilisateurs
+   - `POST /api/userRegister/register` : créer un compte (envoi d'un code de validation par mail).
+   - `POST /api/userRegister/validate-code` : valider le code envoyé par email.
+   - `POST /api/userLogin/login` : connexion (retourne token JWT).
+   - `POST /api/userLogin/logout` : déconnexion.
+   - `GET /api/user/profile` : récupérer la liste/profils (admin, filtrage possible par `role`, `nom`, `email`).
+   - `PUT /api/userUpdate/:id` : modifier profil (auth requis).
+   - `POST /api/userUpdate/validate-email` : valider un nouveau mail via code.
+   - `PUT /api/userUpdate/change-status/:id` : changer le statut d'un utilisateur (admin).
+   - `DELETE /api/user/delete/:id` : supprimer un utilisateur (admin).
 
-Get Reservations (Admin)
-Retrieve all reservations, optionally filtered by employee or formation.
+ - Mot de passe
+   - `POST /forgot-password` : demander un code de réinitialisation.
+   - `POST /validate-code` : valider le code reçu.
+   - `POST /reset-password` : réinitialiser le mot de passe.
 
-Method: GET
-Path: /api/reservations
-Headers:x-access-token: JWT_TOKEN
+ - Formations
+   - `GET /api/formations` : lister les formations (filtres possibles : `titre`, `domaine`, `dateDebut`, etc.).
+   - `GET /api/formations/:id` : récupérer une formation.
+   - `POST /api/formations/addFormation` : ajouter une formation (admin).
+   - `PUT /api/formations/updateFormation/:id` : modifier (admin).
+   - `DELETE /api/formations/deleteFormation/:id` : supprimer (admin).
 
+ - Réservations
+   - `POST /api/reservations` : créer une réservation (employé). Body minimal : `{ "formation": "ID_FORMATION" }`.
+   - `PUT /api/reservations/:id` : mettre à jour le statut d'une réservation (admin). Exemple : `{ "status": "confirmee" }`.
+   - `GET /api/reservations` : récupérer toutes les réservations (admin, filtres : `employeId`, `formationId`).
+   - `DELETE /api/reservations/public/:id` : supprimer une réservation (endpoint public avec contrôle optionnel par email).
 
-Query Parameters (optional):
-employeId: Filter by employee ID.
-formationId: Filter by formation ID.
+  Remarque : les routes protégées requièrent le header `x-access-token: JWT_TOKEN`.
 
+ ## Modèles de données (résumé)
 
-Description: Allows an admin to retrieve a list of reservations, optionally filtered by employee or formation. The response includes populated employee and formation details (name, email, and title).
-Success Response:
-Status: 200
-Body:[
-  {
-    "_id": "RESERVATION_ID",
-    "formation": {
-      "_id": "ID_FORMATION",
-      "titre": "Formation Title"
-    },
-    "employe": {
-      "_id": "EMPLOYEE_ID",
-      "nom": "Employee Name",
-      "email": "employee@example.com"
-    },
-    "status": "en_attente",
-    "dateReservation": "2025-09-29T14:18:00.000Z",
-    "createdAt": "2025-09-29T14:18:00.000Z",
-    "updatedAt": "2025-09-29T14:18:00.000Z"
-  }
-]
+ - `User` : nom, email, mot de passe (haché), role (`employe|admin`), `statut`, `emailVerified`, `competence[]`.
+ - `Formation` : titre, domaine, description, `dateDebut`, `dateFin`, `minPlace`, `maxPlace`, `placeDispo`.
+ - `Reservation` : référence vers `User` et `Formation`, `status` (`en_attente|confirmee|annulee`), date de réservation.
 
+ ## Vue / Front
 
+ Le dossier `views/` contient des pages EJS pour les flux d'email et de mot de passe :
 
+ - `forgot-password.ejs`, `reset-password.ejs`, `sendPasswordMail.ejs`, `validate-code.ejs`.
 
+ Ces vues sont utilisées pour afficher les formulaires et messages liés à la récupération de mot de passe et à la validation par code.
 
-Delete a Reservation (Public)
-Delete a reservation with optional email validation.
+ ## Email
 
-Method: DELETE
-Path: /api/reservations/public/:id
-Body (optional):{
-  "email": "employee@example.com"
-}
+ La logique d'envoi d'email se trouve dans `utils/mailer.js` (configuration `nodemailer`). Les emails sont utilisés pour envoyer les codes de validation et les notifications de statut de réservation.
 
+ ## Seeder
 
-Description: Deletes a reservation by its ID. If an email is provided, it must match the email of the employee associated with the reservation. If the reservation was confirmed, the available slots (placeDispo) for the formation are incremented.
-Success Response:
-Status: 200
-Body:{
-  "message": "Réservation supprimée avec succès"
-}
+ Le fichier `seeder.js` permet de peupler la base de données avec des jeux de données de test. Exécutez `node seeder.js` après avoir configuré `.env` si vous voulez initialiser des données.
 
+ ## Sécurité et bonnes pratiques
 
+ - Les mots de passe sont hachés avec `bcrypt`.
+ - Les routes protégées requièrent un token JWT signé avec `JWT_SECRET`.
+ - Les opérations sensibles (création/modification/suppression de données critiques) doivent être restreintes au rôle `admin`.
 
+ ## Débogage / développement
 
+ - Vérifier les logs de `app.js` et la connexion MongoDB (`db.js`).
+ - Utiliser `nodemon` pour recharger automatiquement en développement.
 
-Error Responses
-Common error responses include:
+ ## Tests manuels rapides
 
-400 Bad Request:{
-  "message": "Error message (e.g., validation error or no available slots)"
-}
+ 1. Créer un compte via `POST /api/userRegister/register`.
+ 2. Valider le code envoyé par email (checker la console ou l'email configuré).
+ 3. Se connecter avec `POST /api/userLogin/login`, récupérer le token.
+ 4. Créer une formation (compte admin) puis tester la réservation avec un compte employé.
 
+ ## Prochaines améliorations possibles
 
-401 Unauthorized:{
-  "message": "Non autorisé"
-}
+ - Ajouter des tests automatisés (Jest / Mocha).
+ - Ajouter un script `npm run dev` pour lancer `nodemon`.
+ - Ajouter de la documentation OpenAPI / Swagger.
 
+ ## Où regarder dans le code
 
-403 Forbidden:{
-  "message": "Email ne correspond pas à la réservation"
-}
+ - Contrôleurs : `controllers/` (logique métier).
+ - Routes : `routes/` (liste des endpoints).
+ - Modèles Mongoose : `models/`.
+ - Middleware : `middleware/verifyToken.js`.
+ - Utilitaires mail : `utils/mailer.js`.
 
+ ---
 
-404 Not Found:{
-  "message": "Réservation non trouvée"
-}
-
-
-
-
----
-## Utilisateurs
-
-### Récupérer profils (admin)
-- **GET** `/api/user/profile?role=...&nom=...&email=...`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Réponse** : Liste filtrée des utilisateurs
-
-
-## Mise à jour utilisateur
-
-### Modifier profil
-- **PUT** `/api/userUpdate/:id`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Body** : Champs à modifier
-
-### Valider changement d'email
-- **POST** `/api/userUpdate/validate-email`
-- **Body** :
-  ```json
-  {
-    "email": "nouvel@email.com",
-    "code": "123456"
-  }
-  ```
-
-### Changer statut (admin)
-- **PUT** `/api/userUpdate/change-status/:id`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Body** :
-  ```json
-  {
-    "statut": "actif|inactif"
-  }
-  ```
-
-  ### Supprimer un utilisateur (admin)
-- **DELETE** `/api/user/delete/:id`
-- **Headers** : `x-access-token: JWT_TOKEN`
-- **Paramètres URL** :  
-  - `id` → Identifiant MongoDB de l’utilisateur à supprimer
-- **Réponse (succès)** :
-  ```json
-  {
-    "message": "L'utilisateur 652f1e8d9a23a9d4a8c1e5f0 a été supprimé avec succès"
-  }
-
-  Réponse (erreur - utilisateur introuvable) :
-  {
-  "message": "Utilisateur introuvable"
-} 
-Réponse (erreur - accès non autorisé) :
-
-{
-  "message": "Accès refusé, administrateur uniquement"
-}
- 
----
-
-## Notes
-
-- **Token JWT** : À envoyer dans le header `x-access-token` pour les routes protégées.
-- **Format des dates** : ISO 8601 (`YYYY-MM-DD`).
-- **Codes de validation** : 6 chiffres, valides pour une durée limitée.
-- **Réponses d'erreur** : Toujours sous la forme `{ "message": "..." }`.
-
----
-
-Pour toute question sur les endpoints, voir le code source ou demander à l'équipe back-end.
-
-
-## Modèles de données
-
-### Utilisateur (`User`)
-```json
-{
-  "id": "string",
-  "nom": "string",
-  "email": "string",
-  "role": "employe|admin",
-  "competence": ["string"],
-  "statut": "en_attente|actif|inactif",
-  "emailVerified": true,
-  "enLigne": true
-}
-```
-
-### Formation (`Formation`)
-```json
-{
-  "id": "string",
-  "titre": "string",
-  "domaine": "string",
-  "description": "string",
-  "dateDebut": "YYYY-MM-DD",
-  "dateFin": "YYYY-MM-DD",
-  "minPlace": 1,
-  "maxPlace": 20
-}
-```
-
-### Réservation (`Reservation`)
-```json
-{
-  "id": "string",
-  "user": "ID_USER",
-  "formation": "ID_FORMATION",
-  "status": "en_attente|confirmee|annulee",
-  "dateReservation": "YYYY-MM-DD"
-}
-
-```
-
-### Exemple de réponse d’erreur
-```json
-{
-  "message": "Description de l’erreur"
-}
-```
-ne peut pas reserver avec nbr de place  0 
-```json
-{ 
-  message: "Plus de places disponibles pour cette formation" 
-}
-
-
-
-
-
-### l employé 
+ Pour toute précision (exemples d'appels HTTP, schemas complets, ou traduction en anglais), dites-moi ce que vous voulez que j'ajoute ou clarifie.
